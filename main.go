@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strconv"
+	"strings"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 )
@@ -46,7 +46,8 @@ func main() {
 
 	testJobOutputStr := os.Getenv("TEST_JOB_OUTPUT")
 	fmt.Println("TEST_JOB_OUTPUT:", testJobOutputStr)
-	testJobOutputStr, _ = strconv.Unquote(testJobOutputStr)
+	testJobOutputStr = strings.ReplaceAll(testJobOutputStr, "\\n", "")
+	testJobOutputStr = strings.ReplaceAll(testJobOutputStr, "\\", "\"")
 	fmt.Println("TEST_JOB_OUTPUT:", testJobOutputStr)
 
 	testJobOutput := make(map[string]JobOutput, 0)

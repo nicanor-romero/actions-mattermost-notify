@@ -46,13 +46,8 @@ func main() {
 
 	testVar := os.Getenv("TEST_ENV")
 	fmt.Println("TEST_ENV:", testVar)
-	testVar = os.Getenv("TEST_ENV_2")
-	fmt.Println("TEST_ENV_2:", testVar)
-	testVar = os.Getenv("TEST_ENV_3")
-	fmt.Println("TEST_ENV_3:", testVar)
 
 	testJobOutputStr := os.Getenv("TEST_JOB_OUTPUT")
-
 	fmt.Println("TEST_JOB_OUTPUT:", testJobOutputStr)
 	testJobOutputStr, _ = strconv.Unquote(testJobOutputStr)
 	fmt.Println("TEST_JOB_OUTPUT:", testJobOutputStr)
@@ -76,7 +71,7 @@ func main() {
 	//  }
 	//}
 
-	message := fmt.Sprintf(":x: The commit [%s](%s) by @nicanor.romero (%s - %s) has failed one or more pipeline steps:",
+	message := fmt.Sprintf(":warning: The commit [%s](%s) by @nicanor.romero (%s - %s) has failed one or more pipeline steps:",
 		commit.commitMessage,
 		commit.url,
 		commit.authorUsername,
@@ -84,7 +79,7 @@ func main() {
 	)
 	for jobKey, jobOutput := range testJobOutput {
 		if jobOutput.Failed() {
-			message += fmt.Sprintf("\n  * %s", jobKey)
+			message += fmt.Sprintf("\n  * :red_circle: %s", jobKey)
 		}
 	}
 

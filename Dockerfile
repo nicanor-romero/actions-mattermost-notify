@@ -7,8 +7,4 @@ COPY go.mod /go.mod
 COPY go.sum /go.sum
 COPY entrypoint.sh /entrypoint.sh
 
-
-ENV TEST_ENV_2='This is a test env 2 variable'
-ENV TEST_ENV_3=$2
-
 ENTRYPOINT ["/entrypoint.sh"]

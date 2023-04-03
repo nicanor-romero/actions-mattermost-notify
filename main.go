@@ -44,11 +44,6 @@ func main() {
 	fmt.Println("commit.authorEmail:", commit.authorEmail)
 	fmt.Println("commit.commitMessage:", commit.commitMessage)
 
-	testVar := os.Getenv("TEST_ENV")
-	fmt.Println("TEST_ENV:", testVar)
-	testVar = os.Getenv("TEST_ENV_2")
-	fmt.Println("TEST_ENV_2:", testVar)
-
 	testJobOutputStr := os.Getenv("TEST_JOB_OUTPUT")
 	fmt.Println("TEST_JOB_OUTPUT:", testJobOutputStr)
 	testJobOutputStr, _ = strconv.Unquote(testJobOutputStr)

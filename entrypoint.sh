@@ -20,4 +20,4 @@ TEST_ENV_2="this is a test env 2"
 
 echo "TEST_ENV: $TEST_ENV"
 
-go run /main.go
+TEST_ENV_2=1234 go run /main.go

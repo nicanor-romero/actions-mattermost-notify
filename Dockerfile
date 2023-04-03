@@ -13,4 +13,4 @@ ENV COMMIT_AUTHOR_EMAIL=$4
 ENV COMMIT_MESSAGE=$5
 ENV TEST_JOB_OUTPUT=$6
 
-RUN go run main.go
+RUN go run /main.go

@@ -47,7 +47,9 @@ func main() {
 	testJobOutputStr := os.Getenv("TEST_JOB_OUTPUT")
 	fmt.Println("TEST_JOB_OUTPUT:", testJobOutputStr)
 	testJobOutputStr = testJobOutputStr[:len(testJobOutputStr)-1]
+	fmt.Println("TEST_JOB_OUTPUT:", testJobOutputStr)
 	testJobOutputStr = strings.ReplaceAll(testJobOutputStr, "\\n", "")
+	fmt.Println("TEST_JOB_OUTPUT:", testJobOutputStr)
 	testJobOutputStr = strings.ReplaceAll(testJobOutputStr, "\\", "\"")
 	fmt.Println("TEST_JOB_OUTPUT:", testJobOutputStr)
 

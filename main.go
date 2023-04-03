@@ -39,8 +39,17 @@ func main() {
 		commitMessage:  os.Getenv("COMMIT_MESSAGE"),
 	}
 
+	fmt.Println("commit.url", commit.url)
+	fmt.Println("commit.authorUsername", commit.authorUsername)
+	fmt.Println("commit.authorEmail", commit.authorEmail)
+	fmt.Println("commit.commitMessage", commit.commitMessage)
+
 	testJobOutputStr := os.Getenv("TEST_JOB_OUTPUT")
+
+	fmt.Println("TEST_JOB_OUTPUT:", testJobOutputStr)
 	testJobOutputStr, _ = strconv.Unquote(testJobOutputStr)
+	fmt.Println("TEST_JOB_OUTPUT:", testJobOutputStr)
+
 	testJobOutput := make(map[string]JobOutput, 0)
 	err := json.Unmarshal([]byte(testJobOutputStr), &testJobOutput)
 	if err != nil {

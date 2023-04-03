@@ -1,0 +1,31 @@
+name: 'Mattermost Notify'
+description: 'Notify other commit actions result via Mattermost'
+inputs:
+  access-token:
+    description: 'Access token for Mattermost'
+    required: true
+  commit-url:
+    description: 'Github commit URL'
+    required: true
+  commit-author-username:
+    description: 'Github commit author username'
+    required: true
+  commit-author-email:
+    description: 'Github commit author email'
+    required: true
+  commit-message:
+    description: 'Github commit message'
+    required: true
+  job-output:
+    description: 'The output of the Github Action job that needs to be notified'
+    required: true
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.access-token }}
+    - ${{ inputs.commit-url }}
+    - ${{ inputs.commit-author-username }}
+    - ${{ inputs.commit-author-email }}
+    - ${{ inputs.commit-message }}
+    - ${{ inputs.job-output }}

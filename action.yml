@@ -28,5 +28,5 @@ runs:
     - ${{ inputs.commit-author-username }}
     - ${{ inputs.commit-author-email }}
     - ${{ inputs.commit-message }}
-    - ${{ inputs.job-output }}
+    - "${{ inputs.job-output }}"
     - 'This is a test env variable'

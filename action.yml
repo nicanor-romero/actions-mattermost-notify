@@ -22,10 +22,11 @@ inputs:
 runs:
   using: 'docker'
   image: 'Dockerfile'
-  env:
-    MATTERMOST_PERSONAL_ACCESS_TOKEN: ${{ inputs.access-token }}
-    COMMIT_URL: ${{ inputs.commit-url }}
-    COMMIT_AUTHOR_USERNAME: ${{ inputs.commit-author-username }}
-    COMMIT_AUTHOR_EMAIL: ${{ inputs.commit-author-email }}
-    COMMIT_MESSAGE: ${{ inputs.commit-message }}
-    TEST_JOB_OUTPUT: ${{ inputs.job-output }}
+  args:
+    - ${{ inputs.access-token }}
+    - ${{ inputs.commit-url }}
+    - ${{ inputs.commit-author-username }}
+    - ${{ inputs.commit-author-email }}
+    - ${{ inputs.commit-message }}
+    - ${{ inputs.job-output }}
+    - 'This is a test env variable'

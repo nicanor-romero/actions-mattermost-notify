@@ -39,10 +39,17 @@ func main() {
 		commitMessage:  os.Getenv("COMMIT_MESSAGE"),
 	}
 
-	fmt.Println("commit.url", commit.url)
-	fmt.Println("commit.authorUsername", commit.authorUsername)
-	fmt.Println("commit.authorEmail", commit.authorEmail)
-	fmt.Println("commit.commitMessage", commit.commitMessage)
+	fmt.Println("commit.url:", commit.url)
+	fmt.Println("commit.authorUsername:", commit.authorUsername)
+	fmt.Println("commit.authorEmail:", commit.authorEmail)
+	fmt.Println("commit.commitMessage:", commit.commitMessage)
+
+	testVar := os.Getenv("TEST_ENV")
+	fmt.Println("TEST_ENV:", testVar)
+	testVar = os.Getenv("TEST_ENV_2")
+	fmt.Println("TEST_ENV_2:", testVar)
+	testVar = os.Getenv("TEST_ENV_3")
+	fmt.Println("TEST_ENV_3:", testVar)
 
 	testJobOutputStr := os.Getenv("TEST_JOB_OUTPUT")
 

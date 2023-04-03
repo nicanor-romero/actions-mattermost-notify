@@ -16,5 +16,8 @@ COMMIT_AUTHOR_EMAIL="$4"
 COMMIT_MESSAGE="$5"
 TEST_JOB_OUTPUT=$6
 TEST_ENV="$7"
+TEST_ENV_2="this is a test env 2"
+
+echo "TEST_ENV: $TEST_ENV"
 
 go run /main.go

@@ -74,7 +74,7 @@ func buildMessage(client *model.Client4, commit Commit, commitStatus CommitStatu
 		mattermostUser = &model.User{Username: "UNKNOWN"}
 	}
 
-	message = fmt.Sprintf(":warning: The commit [_\"%s\"_](%s) by @%s (`%s` - %s) has failed the pipeline step `%s`:",
+	message = fmt.Sprintf(":warning: The commit [_\"%s\"_](%s) by [@]%s (`%s` - %s) has failed the pipeline step `%s`:",
 		commit.getCommitMessageTitle(),
 		commit.url,
 		mattermostUser.Username,

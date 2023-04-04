@@ -1,31 +1,43 @@
 name: 'Mattermost Notify'
 description: 'Notify other commit actions result via Mattermost'
 inputs:
-  access-token:
+  mattermost-access-token:
     description: 'Access token for Mattermost'
     required: true
-  commit-url:
-    description: 'Github commit URL'
+  repo-url:
+    description: 'Github repository URL'
     required: true
-  commit-author-username:
-    description: 'Github commit author username'
+  commit-sha:
+    description: 'Github commit SHA'
     required: true
-  commit-author-email:
-    description: 'Github commit author email'
+  check-run-name:
+    description: 'The Check Run name'
     required: true
-  commit-message:
-    description: 'Github commit message'
+  check-run-conclusion:
+    description: 'The Check Run conclusion'
     required: true
-  job-output:
-    description: 'The output of the Github Action job that needs to be notified'
+  check-run-url:
+    description: 'The Check Run URL'
+    required: true
+  check-run-output-title:
+    description: 'The Check Run title'
+    required: true
+  check-run-output-text:
+    description: 'The Check Run text'
+    required: true
+  check-run-output-summary:
+    description: 'The Check Run summary'
     required: true
 runs:
   using: 'docker'
   image: 'Dockerfile'
   args:
-    - ${{ inputs.access-token }}
-    - ${{ inputs.commit-url }}
-    - ${{ inputs.commit-author-username }}
-    - ${{ inputs.commit-author-email }}
-    - ${{ inputs.commit-message }}
-    - ${{ inputs.job-output }}
+    - ${{ inputs.mattermost-access-token }}
+    - ${{ inputs.repo-url }}
+    - ${{ inputs.commit-sha }}
+    - ${{ inputs.check-run-name }}
+    - ${{ inputs.check-run-conclusion }}
+    - ${{ inputs.check-run-url }}
+    - ${{ inputs.check-run-output-title }}
+    - ${{ inputs.check-run-output-text }}
+    - ${{ inputs.check-run-output-summary }}

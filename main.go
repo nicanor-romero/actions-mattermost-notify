@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 )
@@ -17,6 +18,10 @@ type Commit struct {
 	authorUsername string
 	authorEmail    string
 	commitMessage  string
+}
+
+func (c Commit) getCommitMessageTitle() string {
+	return strings.Split(c.commitMessage, "\n")[0]
 }
 
 type CommitStatus struct {
@@ -70,7 +75,7 @@ func buildMessage(client *model.Client4, commit Commit, commitStatus CommitStatu
 	}
 
 	message = fmt.Sprintf(":warning: The commit [_\"%s\"_](%s) by @%s (%s - %s) has failed the pipeline step `%s`:",
-		commit.commitMessage,
+		commit.getCommitMessageTitle(),
 		commit.url,
 		mattermostUser.Username,
 		commit.authorUsername,

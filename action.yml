@@ -1,47 +1,43 @@
 name: 'Mattermost Notify'
 description: 'Notify other commit actions result via Mattermost'
 inputs:
-  github-access-token:
-    description: 'Access token for Github, used to get commit metadata'
-    required: true
   mattermost-access-token:
     description: 'Access token for Mattermost, used to send a message'
     required: true
-  repo-url:
-    description: 'Github repository URL'
+  commit-url:
+    description: 'Github commit URL'
     required: true
-  commit-sha:
-    description: 'Github commit SHA'
+  commit-author-username:
+    description: 'Github commit author username'
     required: true
-  check-run-name:
-    description: 'The Check Run name'
+  commit-author-email:
+    description: 'Github commit author email'
     required: true
-  check-run-conclusion:
-    description: 'The Check Run conclusion'
+  commit-message:
+    description: 'Github commit message'
     required: true
-  check-run-url:
-    description: 'The Check Run URL'
+  status-conclusion:
+    description: 'Github commit status conclusion'
     required: true
-  check-run-output-title:
-    description: 'The Check Run title'
+  status-url:
+    description: 'Github commit status URL'
     required: true
-  check-run-output-text:
-    description: 'The Check Run text'
+  status-name:
+    description: 'Github commit status name'
     required: true
-  check-run-output-summary:
-    description: 'The Check Run summary'
+  status-description:
+    description: 'Github commit status description'
     required: true
 runs:
   using: 'docker'
   image: 'Dockerfile'
   args:
-    - ${{ inputs.github-access-token }}
     - ${{ inputs.mattermost-access-token }}
-    - ${{ inputs.repo-url }}
-    - ${{ inputs.commit-sha }}
-    - ${{ inputs.check-run-name }}
-    - ${{ inputs.check-run-conclusion }}
-    - ${{ inputs.check-run-url }}
-    - ${{ inputs.check-run-output-title }}
-    - ${{ inputs.check-run-output-text }}
-    - ${{ inputs.check-run-output-summary }}
+    - ${{ inputs.commit-url }}
+    - ${{ inputs.commit-author-username }}
+    - ${{ inputs.commit-author-email }}
+    - ${{ inputs.commit-message }}
+    - ${{ inputs.status-conclusion }}
+    - ${{ inputs.status-url }}
+    - ${{ inputs.status-name }}
+    - ${{ inputs.status-description }}

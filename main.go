@@ -1,14 +1,10 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
-	"strings"
 
-	"github.com/google/go-github/v50/github"
 	"github.com/mattermost/mattermost-server/v5/model"
-	"golang.org/x/oauth2"
 )
 
 const (
@@ -17,38 +13,34 @@ const (
 )
 
 type Commit struct {
-	sha            string
 	url            string
 	authorUsername string
 	authorEmail    string
 	commitMessage  string
 }
 
-type CheckRun struct {
-	Name          string
-	Conclusion    string
-	Url           string
-	OutputTitle   string
-	OutputText    string
-	OutputSummary string
+type CommitStatus struct {
+	Name        string
+	Description string
+	Conclusion  string
+	Url         string
 }
 
-func (o CheckRun) Succeeded() bool {
+func (o CommitStatus) Succeeded() bool {
 	return o.Conclusion == "success"
 }
 
-func (o CheckRun) Failed() bool {
+func (o CommitStatus) Failed() bool {
 	return o.Conclusion == "failure"
 }
 
 func main() {
 	fmt.Println("Running actions-mattermost-notify")
-	ctx := context.Background()
 
 	mattermostClient := getMattermostClient()
-	commit := buildCommit(ctx)
-	checkRun := buildCheckRun()
-	message := buildMessage(mattermostClient, commit, checkRun)
+	commit := buildCommit()
+	commitStatus := buildCommitStatus()
+	message := buildMessage(mattermostClient, commit, commitStatus)
 
 	sendMessage(mattermostClient, message)
 }
@@ -71,7 +63,7 @@ func sendMessage(client *model.Client4, message string) {
 	fmt.Println("response:", response)
 }
 
-func buildMessage(client *model.Client4, commit Commit, checkRun CheckRun) (message string) {
+func buildMessage(client *model.Client4, commit Commit, commitStatus CommitStatus) (message string) {
 	mattermostUser, resp := client.GetUserByEmail(commit.authorEmail, "")
 	if resp.StatusCode != 200 {
 		mattermostUser = &model.User{Username: "UNKNOWN"}
@@ -83,50 +75,28 @@ func buildMessage(client *model.Client4, commit Commit, checkRun CheckRun) (mess
 		mattermostUser.Username,
 		commit.authorUsername,
 		commit.authorEmail,
-		checkRun.Name,
+		commitStatus.Name,
 	)
-	message += fmt.Sprintf("\n*  [%s](%s): _%s_", checkRun.OutputTitle, checkRun.Url, checkRun.OutputText)
+	message += fmt.Sprintf("\n*  [%s](%s): _%s_", commitStatus.Name, commitStatus.Url, commitStatus.Description)
 	return
 }
 
-func buildCheckRun() (checkRun CheckRun) {
-	checkRun = CheckRun{
-		Name:          os.Getenv("CHECK_RUN_NAME"),
-		Conclusion:    os.Getenv("CHECK_RUN_CONCLUSION"),
-		Url:           os.Getenv("CHECK_RUN_URL"),
-		OutputTitle:   os.Getenv("CHECK_RUN_OUTPUT_TITLE"),
-		OutputText:    os.Getenv("CHECK_RUN_OUTPUT_TEXT"),
-		OutputSummary: os.Getenv("CHECK_RUN_OUTPUT_SUMMARY"),
+func buildCommitStatus() (commitStatus CommitStatus) {
+	commitStatus = CommitStatus{
+		Name:        os.Getenv("STATUS_NAME"),
+		Description: os.Getenv("STATUS_DESCRIPTION"),
+		Conclusion:  os.Getenv("STATUS_CONCLUSION"),
+		Url:         os.Getenv("STATUS_URL"),
 	}
 	return
 }
 
-func buildCommit(ctx context.Context) (commit Commit) {
-	accessToken := os.Getenv("GITHUB_ACCESS_TOKEN")
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: accessToken},
-	)
-	tc := oauth2.NewClient(ctx, ts)
-	client := github.NewClient(tc)
-
-	// TODO: Use a regex to get owner and repo name from "https://github.com/masmovil/mm-monorepo"
-	repositoryUrl := os.Getenv("REPO_URL")
-	repositoryData := strings.Split(strings.Replace(repositoryUrl, "https://github.com/", "", 1), "/")
-	repositoryOwner := repositoryData[0]
-	repositoryName := repositoryData[1]
-
-	// list all repositories for the authenticated user
-	githubCommitData, _, err := client.Repositories.GetCommit(ctx, repositoryOwner, repositoryName, os.Getenv("COMMIT_SHA"), nil)
-	if err != nil {
-		panic(err)
-	}
-
+func buildCommit() (commit Commit) {
 	commit = Commit{
-		sha:            githubCommitData.GetSHA(),
-		url:            githubCommitData.GetHTMLURL(),
-		authorUsername: githubCommitData.Author.GetLogin(),
-		authorEmail:    githubCommitData.GetCommit().GetAuthor().GetEmail(),
-		commitMessage:  githubCommitData.Commit.GetMessage(),
+		url:            os.Getenv("COMMIT_URL"),
+		authorUsername: os.Getenv("COMMIT_AUTHOR_USERNAME"),
+		authorEmail:    os.Getenv("COMMIT_AUTHOR_EMAIL"),
+		commitMessage:  os.Getenv("COMMIT_MESSAGE"),
 	}
 	return
 }

@@ -33,6 +33,8 @@ func (o CheckRun) Failed() bool {
 }
 
 func main() {
+	fmt.Println("Running actions-mattermost-notify")
+
 	accessToken := os.Getenv("MATTERMOST_ACCESS_TOKEN")
 
 	client := model.NewAPIv4Client("https://mattermost.masstack.com")
@@ -73,11 +75,15 @@ func main() {
 	}
 	message += fmt.Sprintf("%s\n    _%s_", checkRun.OutputTitle, checkRun.OutputText)
 
+	fmt.Println("message:", message)
+
 	testChannelId := "audgc68w4pri7eybkt4byg9pze"
 	post := &model.Post{
 		ChannelId: testChannelId,
 		Message:   message,
 	}
 
-	_, _ = client.CreatePost(post)
+	post, response := client.CreatePost(post)
+	fmt.Println("post:", post)
+	fmt.Println("response:", response)
 }

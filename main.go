@@ -59,7 +59,7 @@ func main() {
 		OutputSummary: os.Getenv("CHECK_RUN_OUTPUT_SUMMARY"),
 	}
 
-	message := fmt.Sprintf(":warning: The commit [%s](%s) by @nicanor.romero (%s - %s) has failed the pipeline step %s",
+	message := fmt.Sprintf(":warning: The commit [%s](%s) by @nicanor.romero (%s - %s) has failed the pipeline step `%s`",
 		commit.commitMessage,
 		commit.url,
 		commit.authorUsername,
@@ -68,14 +68,12 @@ func main() {
 	)
 
 	if checkRun.Failed() {
-		message += "\n  :red_circle: "
+		message += "\n* :red_circle: "
 	} else {
 		// TODO: Delete this, only debugging
-		message += "\n  :large_green_circle: "
+		message += "\n* :large_green_circle: "
 	}
-	message += fmt.Sprintf("%s\n    _%s_", checkRun.OutputTitle, checkRun.OutputText)
-
-	fmt.Println("message:", message)
+	message += fmt.Sprintf("%s: _%s_", checkRun.OutputTitle, checkRun.OutputText)
 
 	testChannelId := "audgc68w4pri7eybkt4byg9pze"
 	post := &model.Post{
@@ -83,7 +81,6 @@ func main() {
 		Message:   message,
 	}
 
-	post, response := client.CreatePost(post)
-	fmt.Println("post:", post)
+	_, response := client.CreatePost(post)
 	fmt.Println("response:", response)
 }

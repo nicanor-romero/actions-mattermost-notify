@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/google/go-github/v50/github"
 	"github.com/mattermost/mattermost-server/v5/model"
+	"golang.org/x/oauth2"
 )
 
 type Commit struct {
@@ -35,22 +39,42 @@ func (o CheckRun) Failed() bool {
 func main() {
 	fmt.Println("Running actions-mattermost-notify")
 
-	accessToken := os.Getenv("MATTERMOST_ACCESS_TOKEN")
+	commit := buildCommit()
+	checkRun := buildCheckRun()
+	message := buildMessage(commit, checkRun)
 
+	sendMessage(message)
+}
+
+func sendMessage(message string) {
+	testChannelId := "audgc68w4pri7eybkt4byg9pze"
+	post := &model.Post{
+		ChannelId: testChannelId,
+		Message:   message,
+	}
+
+	accessToken := os.Getenv("MATTERMOST_ACCESS_TOKEN")
 	client := model.NewAPIv4Client("https://mattermost.masstack.com")
 	client.SetToken(accessToken)
 
-	commit := Commit{
-		sha: os.Getenv("COMMIT_SHA"),
-		url: os.Getenv("REPO_URL") + "/commit/" + os.Getenv("COMMIT_SHA"),
+	_, response := client.CreatePost(post)
+	fmt.Println("response:", response)
+}
 
-		// TODO: Get the rest via Github API
-		authorUsername: "missing_username",
-		authorEmail:    "missing_email",
-		commitMessage:  "missing_message",
-	}
+func buildMessage(commit Commit, checkRun CheckRun) (message string) {
+	message = fmt.Sprintf(":warning: The commit [%s](%s) by @nicanor.romero (%s - %s) has failed the pipeline step `%s`:",
+		commit.commitMessage,
+		commit.url,
+		commit.authorUsername,
+		commit.authorEmail,
+		checkRun.Name,
+	)
+	message += fmt.Sprintf("\n*  [%s](%s): _%s_", checkRun.OutputTitle, checkRun.Url, checkRun.OutputText)
+	return
+}
 
-	checkRun := CheckRun{
+func buildCheckRun() (checkRun CheckRun) {
+	checkRun = CheckRun{
 		Name:          os.Getenv("CHECK_RUN_NAME"),
 		Conclusion:    os.Getenv("CHECK_RUN_CONCLUSION"),
 		Url:           os.Getenv("CHECK_RUN_URL"),
@@ -58,23 +82,37 @@ func main() {
 		OutputText:    os.Getenv("CHECK_RUN_OUTPUT_TEXT"),
 		OutputSummary: os.Getenv("CHECK_RUN_OUTPUT_SUMMARY"),
 	}
+	return
+}
 
-	message := fmt.Sprintf(":warning: The commit [%s](%s) by @nicanor.romero (%s - %s) has failed the pipeline step `%s`:",
-		commit.commitMessage,
-		commit.url,
-		commit.authorUsername,
-		commit.authorEmail,
-		checkRun.Name,
+func buildCommit() (commit Commit) {
+
+	ctx := context.Background()
+	accessToken := os.Getenv("GITHUB_ACCESS_TOKEN")
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: accessToken},
 	)
+	tc := oauth2.NewClient(ctx, ts)
+	client := github.NewClient(tc)
 
-	message += fmt.Sprintf("\n*  [%s](%s): _%s_", checkRun.OutputTitle, checkRun.Url, checkRun.OutputText)
+	// TODO: Use a regex to get owner and repo name from "https://github.com/masmovil/mm-monorepo"
+	repositoryUrl := os.Getenv("REPO_URL")
+	repositoryData := strings.Split(strings.Replace(repositoryUrl, "https://github.com/", "", 1), "/")
+	repositoryOwner := repositoryData[0]
+	repositoryName := repositoryData[1]
 
-	testChannelId := "audgc68w4pri7eybkt4byg9pze"
-	post := &model.Post{
-		ChannelId: testChannelId,
-		Message:   message,
+	// list all repositories for the authenticated user
+	githubCommitData, _, err := client.Repositories.GetCommit(ctx, repositoryOwner, repositoryName, os.Getenv("COMMIT_SHA"), nil)
+	if err != nil {
+		panic(err)
 	}
 
-	_, response := client.CreatePost(post)
-	fmt.Println("response:", response)
+	commit = Commit{
+		sha:            githubCommitData.GetSHA(),
+		url:            githubCommitData.GetHTMLURL(),
+		authorUsername: githubCommitData.Author.GetLogin(),
+		authorEmail:    githubCommitData.Author.GetEmail(),
+		commitMessage:  githubCommitData.Commit.GetMessage(),
+	}
+	return
 }

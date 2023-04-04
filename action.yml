@@ -1,8 +1,11 @@
 name: 'Mattermost Notify'
 description: 'Notify other commit actions result via Mattermost'
 inputs:
+  github-access-token:
+    description: 'Access token for Github, used to get commit metadata'
+    required: true
   mattermost-access-token:
-    description: 'Access token for Mattermost'
+    description: 'Access token for Mattermost, used to send a message'
     required: true
   repo-url:
     description: 'Github repository URL'
@@ -32,6 +35,7 @@ runs:
   using: 'docker'
   image: 'Dockerfile'
   args:
+    - ${{ inputs.github-access-token }}
     - ${{ inputs.mattermost-access-token }}
     - ${{ inputs.repo-url }}
     - ${{ inputs.commit-sha }}

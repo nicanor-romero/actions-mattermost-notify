@@ -11,6 +11,11 @@ import (
 	"golang.org/x/oauth2"
 )
 
+const (
+	MattermostUrl       = "https://mattermost.masstack.com"
+	MattermostChannelId = "audgc68w4pri7eybkt4byg9pze"
+)
+
 type Commit struct {
 	sha            string
 	url            string
@@ -38,33 +43,44 @@ func (o CheckRun) Failed() bool {
 
 func main() {
 	fmt.Println("Running actions-mattermost-notify")
+	ctx := context.Background()
 
-	commit := buildCommit()
+	mattermostClient := getMattermostClient()
+	commit := buildCommit(ctx)
 	checkRun := buildCheckRun()
-	message := buildMessage(commit, checkRun)
+	message := buildMessage(mattermostClient, commit, checkRun)
 
-	sendMessage(message)
+	sendMessage(mattermostClient, message)
 }
 
-func sendMessage(message string) {
-	testChannelId := "audgc68w4pri7eybkt4byg9pze"
+func getMattermostClient() (client *model.Client4) {
+	accessToken := os.Getenv("MATTERMOST_ACCESS_TOKEN")
+	client = model.NewAPIv4Client(MattermostUrl)
+	client.SetToken(accessToken)
+
+	return client
+}
+
+func sendMessage(client *model.Client4, message string) {
 	post := &model.Post{
-		ChannelId: testChannelId,
+		ChannelId: MattermostChannelId,
 		Message:   message,
 	}
-
-	accessToken := os.Getenv("MATTERMOST_ACCESS_TOKEN")
-	client := model.NewAPIv4Client("https://mattermost.masstack.com")
-	client.SetToken(accessToken)
 
 	_, response := client.CreatePost(post)
 	fmt.Println("response:", response)
 }
 
-func buildMessage(commit Commit, checkRun CheckRun) (message string) {
-	message = fmt.Sprintf(":warning: The commit [%s](%s) by @nicanor.romero (%s - %s) has failed the pipeline step `%s`:",
+func buildMessage(client *model.Client4, commit Commit, checkRun CheckRun) (message string) {
+	mattermostUser, resp := client.GetUserByEmail(commit.authorEmail, "")
+	if resp.StatusCode != 200 {
+		mattermostUser = &model.User{Username: "UNKNOWN"}
+	}
+
+	message = fmt.Sprintf(":warning: The commit [_\"%s\"_](%s) by @%s (%s - %s) has failed the pipeline step `%s`:",
 		commit.commitMessage,
 		commit.url,
+		mattermostUser.Username,
 		commit.authorUsername,
 		commit.authorEmail,
 		checkRun.Name,
@@ -85,9 +101,7 @@ func buildCheckRun() (checkRun CheckRun) {
 	return
 }
 
-func buildCommit() (commit Commit) {
-
-	ctx := context.Background()
+func buildCommit(ctx context.Context) (commit Commit) {
 	accessToken := os.Getenv("GITHUB_ACCESS_TOKEN")
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: accessToken},
@@ -111,7 +125,7 @@ func buildCommit() (commit Commit) {
 		sha:            githubCommitData.GetSHA(),
 		url:            githubCommitData.GetHTMLURL(),
 		authorUsername: githubCommitData.Author.GetLogin(),
-		authorEmail:    githubCommitData.Author.GetEmail(),
+		authorEmail:    githubCommitData.GetCommit().GetAuthor().GetEmail(),
 		commitMessage:  githubCommitData.Commit.GetMessage(),
 	}
 	return

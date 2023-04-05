@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 
@@ -9,8 +12,7 @@ import (
 )
 
 const (
-	MattermostUrl       = "https://mattermost.masstack.com"
-	MattermostChannelId = "audgc68w4pri7eybkt4byg9pze"
+	MattermostUrl = "https://mattermost.masstack.com"
 )
 
 type Commit struct {
@@ -31,6 +33,11 @@ type CommitStatus struct {
 	Url         string
 }
 
+type WebhookMessage struct {
+	Text    string `json:"text"`
+	Channel string `json:"channel,omitempty"`
+}
+
 func (o CommitStatus) Succeeded() bool {
 	return o.Conclusion == "success"
 }
@@ -47,7 +54,7 @@ func main() {
 	commitStatus := buildCommitStatus()
 	message := buildMessage(mattermostClient, commit, commitStatus)
 
-	sendMessage(mattermostClient, message)
+	sendMessage(message)
 }
 
 func getMattermostClient() (client *model.Client4) {
@@ -58,32 +65,50 @@ func getMattermostClient() (client *model.Client4) {
 	return client
 }
 
-func sendMessage(client *model.Client4, message string) {
-	post := &model.Post{
-		ChannelId: MattermostChannelId,
-		Message:   message,
+func sendMessage(message string) {
+	webHookUrl := os.Getenv("MATTERMOST_INCOMING_WEBHOOK_URL")
+	webHookMesasge := WebhookMessage{
+		Text:    message,
+		Channel: os.Getenv("MATTERMOST_CHANNEL_NAME"),
+	}
+	body, err := json.Marshal(webHookMesasge)
+	if err != nil {
+		fmt.Println("got error marshaling the request body:", err)
+		return
 	}
 
-	_, response := client.CreatePost(post)
-	fmt.Println("response:", response)
+	response, err := http.Post(webHookUrl, "application/json", bytes.NewReader(body))
+	if err != nil {
+		fmt.Println("got error posting to webhook:", err)
+		return
+	}
+	fmt.Println(response)
+	return
 }
 
 func buildMessage(client *model.Client4, commit Commit, commitStatus CommitStatus) (message string) {
-	mattermostUser, resp := client.GetUserByEmail(commit.authorEmail, "")
-	if resp.StatusCode != 200 {
-		mattermostUser = &model.User{Username: "UNKNOWN"}
-	}
+	mattermostUser, _ := client.GetUserByEmail(commit.authorEmail, "")
 
-	message = fmt.Sprintf(":warning: The commit [_\"%s\"_](%s) by [@]%s (`%s` - %s) has failed the pipeline step `%s`:",
+	userMention := buildUserMention(mattermostUser, commit.authorUsername)
+
+	message = fmt.Sprintf(":warning: The commit [_\"%s\"_](%s) by %s has failed the pipeline step `%s`:",
 		commit.getCommitMessageTitle(),
 		commit.url,
-		mattermostUser.Username,
-		commit.authorUsername,
-		commit.authorEmail,
+		userMention,
 		commitStatus.Name,
 	)
 	message += fmt.Sprintf("\n*  [%s](%s): _%s_", commitStatus.Name, commitStatus.Url, commitStatus.Description)
 	return
+}
+
+func buildUserMention(mattermostUser *model.User, githubAuthorUsername string) (mention string) {
+	githubAuthorUrl := "https://github.com/" + githubAuthorUsername
+	if mattermostUser != nil {
+		mention += fmt.Sprintf("@%s ([%s](%s))", mattermostUser.Username, githubAuthorUsername, githubAuthorUrl)
+	} else {
+		mention += fmt.Sprintf("[%s](%s)", githubAuthorUsername, githubAuthorUrl)
+	}
+	return mention
 }
 
 func buildCommitStatus() (commitStatus CommitStatus) {
@@ -97,6 +122,7 @@ func buildCommitStatus() (commitStatus CommitStatus) {
 }
 
 func buildCommit() (commit Commit) {
+	// TODO: Try to get email from commit message -> "Co-authored-by: gabrielescudero <gabriel.escudero@asesormasmovil.es>" when email is "26552918+gabrielescudero@users.noreply.github.com"
 	commit = Commit{
 		url:            os.Getenv("COMMIT_URL"),
 		authorUsername: os.Getenv("COMMIT_AUTHOR_USERNAME"),

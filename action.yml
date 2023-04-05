@@ -2,7 +2,13 @@ name: 'Mattermost Notify'
 description: 'Notify other commit actions result via Mattermost'
 inputs:
   mattermost-access-token:
-    description: 'Access token for Mattermost, used to send a message'
+    description: 'Access token for Mattermost, used to match commit emails to usernames'
+    required: true
+  mattermost-incoming-webhook-url:
+    description: 'Mattermost incoming webhook URL, via which messages will be sent'
+    required: true
+  mattermost-channel-name:
+    description: 'Mattermost channel name where the action will post messages'
     required: true
   commit-url:
     description: 'Github commit URL'
@@ -33,6 +39,8 @@ runs:
   image: 'Dockerfile'
   args:
     - ${{ inputs.mattermost-access-token }}
+    - ${{ inputs.mattermost-incoming-webhook-url }}
+    - ${{ inputs.mattermost-channel-name }}
     - ${{ inputs.commit-url }}
     - ${{ inputs.commit-author-username }}
     - ${{ inputs.commit-author-email }}

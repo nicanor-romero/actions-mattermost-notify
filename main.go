@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 )
 
 const (
@@ -87,7 +87,7 @@ func sendMessage(message string) {
 }
 
 func buildMessage(client *model.Client4, commit Commit, commitStatus CommitStatus) (message string) {
-	mattermostUser, _ := client.GetUserByEmail(commit.authorEmail, "")
+	mattermostUser, _, _ := client.GetUserByEmail(commit.authorEmail, "")
 
 	userMention := buildUserMention(mattermostUser, commit.authorUsername)
 

@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -12,7 +14,8 @@ import (
 )
 
 const (
-	MattermostUrl = "https://mattermost.masstack.com"
+	GitHubOrganization = "masmovil"
+	MattermostUrl      = "https://mattermost.masstack.com"
 )
 
 type Commit struct {
@@ -46,6 +49,25 @@ func (o CommitStatus) Failed() bool {
 	return o.Conclusion == "failure"
 }
 
+// GithubUserSSO is used to unmarshall GitHub API response
+type GithubUserSSO struct {
+	Data struct {
+		Organization struct {
+			SAMLIdentityProvider struct {
+				ExternalIdentities struct {
+					Edges []struct {
+						Node struct {
+							SamlIdentity struct {
+								NameId string `json:"nameId"`
+							} `json:"samlIdentity"`
+						} `json:"node"`
+					} `json:"edges"`
+				} `json:"externalIdentities"`
+			} `json:"samlIdentityProvider"`
+		} `json:"organization"`
+	} `json:"data"`
+}
+
 func main() {
 	fmt.Println("Running actions-mattermost-notify")
 
@@ -55,6 +77,7 @@ func main() {
 	message := buildMessage(mattermostClient, commit, commitStatus)
 
 	sendMessage(message)
+	return
 }
 
 func getMattermostClient() (client *model.Client4) {
@@ -122,12 +145,59 @@ func buildCommitStatus() (commitStatus CommitStatus) {
 }
 
 func buildCommit() (commit Commit) {
-	// TODO: Try to get email from commit message -> "Co-authored-by: gabrielescudero <gabriel.escudero@asesormasmovil.es>" when email is "26552918+gabrielescudero@users.noreply.github.com"
 	commit = Commit{
 		url:            os.Getenv("COMMIT_URL"),
 		authorUsername: os.Getenv("COMMIT_AUTHOR_USERNAME"),
 		authorEmail:    os.Getenv("COMMIT_AUTHOR_EMAIL"),
 		commitMessage:  os.Getenv("COMMIT_MESSAGE"),
 	}
+
+	authorEmail, err := getAuthorEmailFromGithubSSO(commit.authorUsername)
+	if err != nil {
+		// If we are unable to get email from GitHub SSO, we will use the one specified in the commit metadata
+		fmt.Println("got error getting email from github SSO:", err)
+		return
+	}
+	// Replace the email from the commit with the one from GitHub SSO
+	commit.authorEmail = authorEmail
+
+	return
+}
+
+func getAuthorEmailFromGithubSSO(authorUsername string) (authorEmail string, err error) {
+	// Get email from organization SSO, using GitHub username as key
+	queryBody := fmt.Sprintf("{\"query\": \"query {organization(login: \\\"%s\\\"){samlIdentityProvider{externalIdentities(first: 1, login: \\\"%s\\\") {edges {node {samlIdentity {nameId}}}}}}}\"}", GitHubOrganization, authorUsername)
+	req, err := http.NewRequest("POST", "https://api.github.com/graphql", bytes.NewBuffer([]byte(queryBody)))
+	accessToken := os.Getenv("GITHUB_ACCESS_TOKEN")
+	req.Header.Add("Authorization", "Bearer "+accessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("got error while doing request to github API:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("got error reading github API response body:", err)
+		return
+	}
+
+	var githubAuthorSSO GithubUserSSO
+	err = json.Unmarshal(body, &githubAuthorSSO)
+	if err != nil {
+		fmt.Println("got error unmarshalling github API response body:", err)
+		return
+	}
+
+	if len(githubAuthorSSO.Data.Organization.SAMLIdentityProvider.ExternalIdentities.Edges) == 0 {
+		err = errors.New("no external identity edges")
+		fmt.Println("got zero external identity edges from github api response:", err)
+		return
+	}
+
+	authorEmail = githubAuthorSSO.Data.Organization.SAMLIdentityProvider.ExternalIdentities.Edges[0].Node.SamlIdentity.NameId
 	return
 }

@@ -2,6 +2,10 @@
 
 echo 'Running entrypoint'
 
+ls -l
+ls -l /
+ls -l /usr/local/go/bin
+
 GITHUB_ACCESS_TOKEN=${1} \
 MATTERMOST_ACCESS_TOKEN=${2} \
 MATTERMOST_INCOMING_WEBHOOK_URL=${3} \
@@ -14,6 +18,6 @@ STATUS_CONCLUSION=${9} \
 STATUS_URL=${10} \
 STATUS_NAME=${11} \
 STATUS_DESCRIPTION=${12} \
-go run /main.go
+/usr/local/go/bin/go run /main.go
 
 echo 'Running entrypoint done'

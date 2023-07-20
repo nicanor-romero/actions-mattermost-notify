@@ -2,8 +2,6 @@
 
 echo 'Running entrypoint'
 
-ls -l
-ls -l /
 ls -l /usr/local/go/bin
 
 GITHUB_ACCESS_TOKEN=${1} \
